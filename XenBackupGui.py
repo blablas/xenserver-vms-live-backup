@@ -50,20 +50,21 @@ class xrcmainFrameSub(XenBackupGui_xrc.xrcmainFrame):
     
     def __init__(self):
         XenBackupGui_xrc.xrcmainFrame.__init__(self, parent = None)
+        # create XenServer object
         try:
             self.xen = XenBackup.XenServer('XenBackup.cfg', self)
         except Exception, e:
             wx.MessageBox('Error creating XenServer object:\n %s ' % str(e))
             raise        
-        # Set up event handler exporting thread
-        XenBackup.EVT_RESULT(self, self.OnTaskEvent)        
+        # setup event handler exporting thread
+        XenBackup.EVT_RESULT(self, self.OnTaskEvent)
         self.isLogged = False
         self.vmId = datetime.datetime.today().strftime("%a")
         self.vmList = None
         self.vmCount = 0
+        self.vmLeft = 0
         self.exportTaskVM = ''
         self.statusBeforeBackup = ''
-        self.backupProgress = 0
         xrc.XRCCTRL(self, 'mainStatus').SetStatusText(statusRightText['notConnected'], 1)
         xrc.XRCCTRL(self, 'mainStatus').SetStatusText(self.vmId + \
             statusLeftText['taggedVM'], 0)
@@ -74,7 +75,8 @@ class xrcmainFrameSub(XenBackupGui_xrc.xrcmainFrame):
     def OnTaskEvent(self, evt):
         # backup process has started
         if evt.data['name'] == XenBackup.BACKUP_EVENTS['start_backup']:
-            self.vmCount = len(self.xen.config['vm'])
+            self.vmLeft = len(self.xen.config['vm'])
+            self.vmCount = self.vmLeft
             # provide aborting stuff
             xrc.XRCCTRL(self, 'backupButton').SetLabel(backupButtonLabel['abort'])
             # save mainStatus' left panel
@@ -96,18 +98,19 @@ class xrcmainFrameSub(XenBackupGui_xrc.xrcmainFrame):
             self.exportTaskVM = evt.data['task_vm']            
         # single exporting task has finished
         elif evt.data['name'] == XenBackup.BACKUP_EVENTS['end_task']:
-            self.vmCount -= 1
+            self.vmLeft -= 1
             self.exportTaskVM = None
         # single exporting task is in progress
         elif evt.data['name'] == XenBackup.BACKUP_EVENTS['progress_task']:
             partial = int(evt.data['progress'] * 100)
-            self.backupProgress = int(evt.data['progress'] / self.vmCount * 100)
+            total = int((evt.data['progress'] / self.vmLeft) + \
+                ((self.vmCount - self.vmLeft) / self.vmCount)) * 100
             text = Template('[$status] $backupVMs$vmName: $partial% (Total: $total%)')
             status = text.safe_substitute(status = evt.data['status'], \
                                     backupVMs = statusLeftText['backupVMs'], \
                                     vmName = evt.data['original_vm'], \
                                     partial = str(partial), \
-                                    total = str(self.backupProgress))                  
+                                    total = str(total))                  
             xrc.XRCCTRL(self, 'mainStatus').SetStatusText(status, 0)
 
     def OnButton_hostButton(self, evt):
