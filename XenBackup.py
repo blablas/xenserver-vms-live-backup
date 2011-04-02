@@ -334,8 +334,8 @@ This class represents the XemServer backup library
         self.nfs_sr = None
         self.session = None
         self.user_session = None
-        self.username = 'root'
-        self.password = 'sharpmz731'        
+        self.username = 'user'
+        self.password = 'password'        
         self.host = ''
         self.load_config(conf_file)
         self.log_config(self.config['log_file'])
