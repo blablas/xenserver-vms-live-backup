@@ -36,16 +36,19 @@ import threading
 import wx
 from email.MIMEText import MIMEText
 
+"""
+Possible event's names
+"""
 BACKUP_EVENTS = {'start_backup': 'START_BACKUP',
                     'end_backup': 'END_BACKUP',
                     'start_task': 'START_TASK',
                     'progress_task': 'PROGRESS_TASK',
                     'end_task': 'END_TASK'
                 }
-"""
-Possible event's names
-"""
 
+"""
+Possible task's status
+"""
 TASK_STATUS = {'pending': 'pending',
                 'success': 'success',
                 'failure': 'failure',
@@ -53,14 +56,11 @@ TASK_STATUS = {'pending': 'pending',
                 'cancelled': 'cancelled',
                 'undefined': 'undefined'
             }
-"""
-Possible task's status
-"""
 
-EVT_RESULT_ID = wx.NewId()
 """
 ID of the custom event
 """
+EVT_RESULT_ID = wx.NewId()
 
 def EVT_RESULT(win, func):
     """
@@ -85,13 +85,13 @@ class VM2Export(threading.Thread):
 This class represents a copy of the virtual machine to be exported
     """    
 
-    # XenServer task list to be associated with the export process grouped by virtual machine's name 
-    export_tasks = {}    
-    # Synchronization event to notify export task creation 
+    """ XenServer task list to be associated with the export process grouped by virtual machine's name """    
+    export_tasks = {}
+    """ Synchronization event to notify export task creation """
     event = threading.Event()
-    # Lock to guard task list 
+    """ Lock to guard task list """
     lock = threading.Lock()
-
+    
     def __init__(self, xen):
         """ 
     VM2Export Constructor 

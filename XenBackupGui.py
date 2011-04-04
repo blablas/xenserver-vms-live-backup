@@ -28,35 +28,68 @@ import datetime, wx, XenBackup, thread
 from string import Template
 import wx.xrc as xrc
 
+"""
+Possible status bar left messages 
+"""
 statusLeftText = {'taggedVM': ' tagged virtual machines will be backed up',
                     'singleVM': ' will be backed up',
                     'noVM': 'Select a virtual machine to backup',
                     'backupVMs': 'Backing up ', 
-                }                
+                }     
+                
+
+"""
+Possible status bar rigth messages 
+"""           
 statusRightText = {'notConnected': 'Not connected',
                     'connected': 'Connected to '
                 }
+
+"""
+Possible backup button labels 
+"""
 backupButtonLabel = {'backup': 'Backup!',
                         'abort': 'Abort'
                     }
+
+"""
+Possible backup button tool tips 
+"""                    
 backupButtonTooltip = {'backup': 'Start backup process',
                         'abort': 'Abort backup process'
                     }
+                    
+"""
+Possible host button labels 
+"""                    
 hostButtonLabel = {'connect': 'Connect...!',
                     'disconnect': 'Disconnect...'
                     }                    
                 
+
 class xrcmainFrameSub(XenBackupGui_xrc.xrcmainFrame):
+    """ 
+This class represents the main GUI frame
+    """
     
     def __init__(self):
+        """ 
+    xrcmainFrameSub Constructor:
+    
+    1) create parent frame
+    2) create XenServer object
+    3) setup event handler for EVT_RESULT event and initialize members
+    4) show up
+        """
+        # 1)
         XenBackupGui_xrc.xrcmainFrame.__init__(self, parent = None)
-        # create XenServer object
+        # 2)
         try:
             self.xen = XenBackup.XenServer('XenBackup.cfg', self)
         except Exception, e:
             wx.MessageBox('Error creating XenServer object:\n %s ' % str(e))
             raise        
-        # setup event handler exporting thread
+        # 3)
         XenBackup.EVT_RESULT(self, self.OnTaskEvent)
         self.isLogged = False
         self.vmId = datetime.datetime.today().strftime("%a")
@@ -70,38 +103,66 @@ class xrcmainFrameSub(XenBackupGui_xrc.xrcmainFrame):
             statusLeftText['taggedVM'], 0)
         xrc.XRCCTRL(self, 'backupButton').Bind(wx.EVT_ENTER_WINDOW, self.OnBackupButtonMouseOver)
         xrc.XRCCTRL(self, 'backupButton').Bind(wx.EVT_LEAVE_WINDOW, self.OnBackupButtonMouseLeave)
+        # 4)
         self.Show()
         
     def OnTaskEvent(self, evt):
-        # backup process has started
+        """ 
+    EVT_RESULT event handler:
+    
+    1) if backup process has started:
+        1.1) set virtual machines to do an done
+        1.2) set backup button lable and tool tip
+        1.3) disable all control except backup button 
+        1.4) save mainStatus' left panel
+    2) if backup process has finished:
+        2.1) restore backup button label and tool tip
+        2.2) enable all controls previously disabled
+        2.3) restore mainStatus' left panel
+    3) if single exporting task has started:
+        3.1) save current exporting task reference
+    4) if single exporting task has finished:
+        4.1) decrement virtual machine to be done count
+        4.2) reset current exporting task reference
+    5) if single exporting task is in progress:
+        5.1) calculate partial and total progress and show them on mainStatus' left panel 
+        """        
+        # 1)
         if evt.data['name'] == XenBackup.BACKUP_EVENTS['start_backup']:
+            # 1.1)
             self.vmLeft = len(self.xen.config['vm'])
             self.vmCount = self.vmLeft
-            # provide aborting stuff
+            # 1.2) 
             xrc.XRCCTRL(self, 'backupButton').SetLabel(backupButtonLabel['abort'])
-            # save mainStatus' left panel
+            xrc.XRCCTRL(self, 'backupButton').SetToolTip(wx.ToolTip(backupButtonTooltip['abort']))
+            # 1.3)
+            self.toggleAllControlEnable(False)
+            xrc.XRCCTRL(self, 'backupButton').Enable(True)
+            # 1.4)
             self.statusBeforeBackup = xrc.XRCCTRL(self, 'mainStatus').GetStatusText(0)
-        # backup process has finished
+        # 2)
         elif evt.data['name'] == XenBackup.BACKUP_EVENTS['end_backup']:
-            # restore backup capabilities
+            # 2.1)
             xrc.XRCCTRL(self, 'backupButton').SetLabel(backupButtonLabel['backup'])
             xrc.XRCCTRL(self, 'backupButton').SetToolTip(wx.ToolTip(backupButtonTooltip['backup']))
-            # enable all control previously disabled
+            # 2.2)
             self.toggleAllControlEnable(True)
             xrc.XRCCTRL(self, 'backupButton').Enable(True)
-            # restore mainStatus' left panel
+            # 2.3)
             xrc.XRCCTRL(self, 'mainStatus').SetStatusText(self.statusBeforeBackup, 0)   
-            self.backupProgress = 0         
-        # single exporting task has started
+        # 3)
         elif evt.data['name'] == XenBackup.BACKUP_EVENTS['start_task']:
-            # set current exporting task
+            # 3.1)
             self.exportTaskVM = evt.data['task_vm']            
-        # single exporting task has finished
+        # 4)
         elif evt.data['name'] == XenBackup.BACKUP_EVENTS['end_task']:
+            # 4.1)
             self.vmLeft -= 1
+            # 4.2)
             self.exportTaskVM = None
-        # single exporting task is in progress
+        # 5)
         elif evt.data['name'] == XenBackup.BACKUP_EVENTS['progress_task']:
+            # 5.1)
             partial = int(evt.data['progress'] * 100)
             total = int((evt.data['progress'] / self.vmLeft) + \
                 ((self.vmCount - self.vmLeft) / self.vmCount)) * 100
@@ -114,12 +175,21 @@ class xrcmainFrameSub(XenBackupGui_xrc.xrcmainFrame):
             xrc.XRCCTRL(self, 'mainStatus').SetStatusText(status, 0)
 
     def OnButton_hostButton(self, evt):
-        # If not already logged...
+        """ 
+    hostButton event handler:
+    
+    1) If not already logged:
+        1.1) login to specified host and retreive SR list
+        1.2) set controls appereance
+    2) if already logged:
+        2.1) logout
+        2.2) set controls appereance
+        """  
+        # 1)
         if not self.isLogged:  
-            # ...login to specified host...                
             wx.SafeYield()
             wx.BeginBusyCursor()                        
-            # ...retreiving SR list (NFS)...
+            # 1.1)
             try:
                 self.isLogged = self.xen.login(xrc.XRCCTRL(self, 'hostTextCtrl').GetValue())
                 xrc.XRCCTRL(self, 'srCombo').AppendItems(self.xen.get_sr_list())
@@ -128,7 +198,7 @@ class xrcmainFrameSub(XenBackupGui_xrc.xrcmainFrame):
             finally:   
                 wx.SafeYield()
                 wx.EndBusyCursor()
-                # ...and finally set controls... 
+                # 1.2)
                 if self.isLogged:
                     try:
                         xrc.XRCCTRL(self, 'mainStatus').SetStatusText(statusRightText['connected'] \
@@ -140,10 +210,11 @@ class xrcmainFrameSub(XenBackupGui_xrc.xrcmainFrame):
                     xrc.XRCCTRL(self, 'vmEnableText').Enable(self.isLogged)
                     xrc.XRCCTRL(self, 'vmEnableCheck').Enable(self.isLogged)
                     xrc.XRCCTRL(self, 'hostButton').SetLabel(hostButtonLabel['disconnect'])
+        # 2)
         else:            
-            # if already logged, logout...
+            # 2.1)
             self.isLogged = not self.xen.logout()
-            # ...and finally set controls
+            # 2.3)
             if not self.isLogged:
                 xrc.XRCCTRL(self, 'mainStatus').SetStatusText(statusRightText['notConnected'], 1)
                 xrc.XRCCTRL(self, 'srText').Enable(self.isLogged)
@@ -161,13 +232,22 @@ class xrcmainFrameSub(XenBackupGui_xrc.xrcmainFrame):
                 xrc.XRCCTRL(self, 'backupButton').Enable(self.isLogged)
         
     def OnText_hostTextCtrl(self, evt):
+        """ 
+    hostTextCtrl event handler:
+        """
         isEmpty = (len(xrc.XRCCTRL(self, 'hostTextCtrl').GetValue()) == 0)
         xrc.XRCCTRL(self, 'hostButton').Enable(not isEmpty)
         
     def OnCombobox_srCombo(self, evt):
+        """ 
+    srCombo event handler:
+        """        
         xrc.XRCCTRL(self, 'backupButton').Enable(self.enableBackupButton())
         
     def OnCheckbox_vmEnableCheck(self, evt):
+        """ 
+    vmEnableCheck event handler:
+        """        
         try:
             isChecked = xrc.XRCCTRL(self, 'vmEnableCheck').GetValue()
             if not isChecked:
@@ -184,17 +264,35 @@ class xrcmainFrameSub(XenBackupGui_xrc.xrcmainFrame):
             xrc.XRCCTRL(self, 'backupButton').Enable(self.enableBackupButton())
     
     def OnText_vmTextCtrl(self, evt):
+        """ 
+    vmTextCtrl event handler:
+    
+    1) if no virtual machine is specified:
+        1.1) select all virtual machines tagged as current weekday
+    2) if a virtual machine is specified select it for backup
+        """      
+        # 1)
         if len(xrc.XRCCTRL(self, 'vmTextCtrl').GetValue()) == 0:
+            # 1.1)
             self.vmId = datetime.datetime.today().strftime("%a")
+        # 2)
         else:
             self.vmId = xrc.XRCCTRL(self, 'vmTextCtrl').GetValue() 
             xrc.XRCCTRL(self, 'mainStatus').SetStatusText(self.vmId + \
                 statusLeftText['singleVM'], 0)
     
     def OnButton_vmButton(self, evt):
+        """ 
+    vmButton event handler:
+    
+    1) get Pool's virtual machine list
+    2) create virtual machines dialog
+    3) add virtual machine list to the tree list control grouped by hostname
+    4) enable backup button
+        """         
         wx.SafeYield()
         wx.BeginBusyCursor()
-        # get Pool's VM list
+        # 1)
         try:
             if self.vmList is None:
                 self.vmList = self.xen.get_vm_list()
@@ -203,9 +301,9 @@ class xrcmainFrameSub(XenBackupGui_xrc.xrcmainFrame):
         finally:
             wx.SafeYield()
             wx.EndBusyCursor()         
-        # create VMs selection dialog
+        # 2)
         vmDialog = xrcvmDialogSub(self)
-        # add VM list to the tree list control grouped by hostname
+        # 3)
         try:
             vmTree = xrc.XRCCTRL(vmDialog, 'vmTreeList')
             vmTree.AddRoot(self.xen.get_pool_name())
@@ -215,33 +313,55 @@ class xrcmainFrameSub(XenBackupGui_xrc.xrcmainFrame):
                     vmTree.AppendItem(h, vm)
             vmDialog.ShowModal()          
         finally:
+            # 4)
             xrc.XRCCTRL(self, 'backupButton').Enable(self.enableBackupButton())
             vmDialog.Destroy()        
         
     def OnBackupButtonMouseOver(self, evt):
+        """ 
+    backupButton mouseover event handler:
+        """         
         if xrc.XRCCTRL(self, 'backupButton').GetLabel() == backupButtonLabel['abort']:
             wx.SafeYield()
             wx.EndBusyCursor() 
         
     def OnBackupButtonMouseLeave(self, evt):
+        """ 
+    backupButton mouseleave event handler:
+        """         
         if xrc.XRCCTRL(self, 'backupButton').GetLabel() == backupButtonLabel['abort']:
             wx.SafeYield()
             wx.BeginBusyCursor() 
         
     def OnButton_backupButton(self, evt):
+        """ 
+    backupButton event handler:
+    
+    1) if backup:
+        1.1) start backup process on a different thread
+        1.2) temporary disable backup button (waiting for EVT_RESULT)
+    2) if abort:
+        2.1) delete export task
+        2.1) temporary disable backup button (waiting for EVT_RESULT)
+        """          
+        # 1)
         if xrc.XRCCTRL(self, 'backupButton').GetLabel() == backupButtonLabel['backup']:
             sr = xrc.XRCCTRL(self, 'srCombo').GetValue()
-            # start backup process on a different thread
+            # 1.1)
             thread.start_new_thread(self.xen.backup, (self.vmId, sr))
-            # disable all control except this
-            xrc.XRCCTRL(self, 'backupButton').SetToolTip(wx.ToolTip(backupButtonTooltip['abort']))
-            self.toggleAllControlEnable(False)            
-        else:
-            # abort backup process            
+            # 1.2)
             xrc.XRCCTRL(self, 'backupButton').Enable(False)
+        # 2)
+        else:
+            # 2.1)
             self.xen.delete_task(self.exportTaskVM)
+            # 2.1)
+            xrc.XRCCTRL(self, 'backupButton').Enable(False)
         
     def OnButton_quitButton(self, evt):
+        """ 
+    quitButton event handler:
+        """         
         ret  = wx.MessageBox('Are you sure to quit?', 'Question', wx.YES_NO | wx.CENTRE | wx.NO_DEFAULT, self)
         if ret == wx.YES:
             if self.isLogged:
@@ -249,6 +369,9 @@ class xrcmainFrameSub(XenBackupGui_xrc.xrcmainFrame):
             self.Close()
         
     def toggleAllControlEnable(self, enable):
+        """
+    Disable all controls but one
+        """        
         xrc.XRCCTRL(self, 'hostTextCtrl').Enable(enable)
         xrc.XRCCTRL(self, 'hostButton').Enable(enable)
         xrc.XRCCTRL(self, 'srCombo').Enable(enable)
@@ -263,6 +386,9 @@ class xrcmainFrameSub(XenBackupGui_xrc.xrcmainFrame):
             wx.BeginBusyCursor()            
         
     def enableBackupButton(self):
+        """
+    Return True if backup button can be enabled
+        """
         isFullSR = (len(xrc.XRCCTRL(self, 'srCombo').GetValue()) != 0)
         isCheckedVM = xrc.XRCCTRL(self, 'vmEnableCheck').GetValue()
         isFullVM = (len(xrc.XRCCTRL(self, 'vmTextCtrl').GetValue()) != 0)
@@ -272,13 +398,22 @@ class xrcmainFrameSub(XenBackupGui_xrc.xrcmainFrame):
             return False
 
 class xrcvmDialogSub(XenBackupGui_xrc.xrcvmDialog):
-    
+    """ 
+This class represents the virtual machines selection's dialog
+    """
+        
     def __init__(self, parent):
+        """ 
+    xrcvmDialogSub Constructor
+        """        
         self.myParent = parent
         self.selection = None
         XenBackupGui_xrc.xrcvmDialog.__init__(self, parent)
         
     def OnTree_sel_changed_vmTreeList(self, evt):
+        """ 
+    vmTreeList selection change event handler:
+        """         
         selection = evt.GetItem()
         isLeaf = not xrc.XRCCTRL(self, 'vmTreeList').ItemHasChildren(selection)
         xrc.XRCCTRL(self, 'OkButton').Enable(isLeaf)
@@ -288,9 +423,15 @@ class xrcvmDialogSub(XenBackupGui_xrc.xrcvmDialog):
             self.selection = None
             
     def OnButton_CancelButton(self, evt):
+        """ 
+    cancelButton event handler:
+        """         
         self.EndModal(wx.ID_ABORT)
         
     def OnButton_OkButton(self, evt):
+        """ 
+    okButton event handler:
+        """         
         if self.selection is not None:
             selectionText = xrc.XRCCTRL(self, 'vmTreeList').GetItemText(self.selection)
             xrc.XRCCTRL(self.myParent, 'vmTextCtrl').SetValue(selectionText)
