@@ -1,7 +1,7 @@
 #!/usr/bin/python
 #
 # File      :  XenBackupGui.py
-# Project   :  XenServer Live VMs Live Backup
+# Project   :  XenServer Live VMs Backup
 # Author    :  Emiliano Giovannetti
 #
 # Created   :  march'11
