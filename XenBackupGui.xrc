@@ -19,23 +19,21 @@
                     </object>
                     <object class="sizeritem">
                       <object class="wxBoxSizer">
+                        
                         <object class="sizeritem">
-                          <object class="wxTextCtrl" name="hostTextCtrl">
-                            <tooltip>IP address or FQDN of XeServer host</tooltip>
-                            <focused>1</focused>
-                            <XRCED>
-                              <events>EVT_TEXT</events>
-                            </XRCED>
+                          <object class="unknown" name="hostTextCtrl">
+                            <tooltip>IP address of a XenServer host</tooltip>
                           </object>
+                          <option>0</option>
                           <flag>wxALL|wxEXPAND|wxALIGN_CENTRE_VERTICAL</flag>
-                          <minsize>180, -1</minsize>
+                          <minsize>200, -1</minsize>
                         </object>
                         <object class="spacer">
-                          <size>10,0</size>
+                          <size>20,0</size>
                         </object>
                         <object class="sizeritem">
                           <object class="wxButton" name="hostButton">
-                            <label>Connect...</label>
+                            <label>Connect to Pool...</label>
                             <enabled>0</enabled>
                             <XRCED>
                               <events>EVT_BUTTON</events>

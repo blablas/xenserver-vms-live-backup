@@ -25,6 +25,7 @@
 
 import XenBackupGui_xrc
 import datetime, wx, XenBackup, thread
+import wx.lib.masked as masked
 from string import Template
 import wx.xrc as xrc
 
@@ -62,10 +63,16 @@ backupButtonTooltip = {'backup': 'Start backup process',
 """
 Possible host button labels 
 """                    
-hostButtonLabel = {'connect': 'Connect...!',
-                    'disconnect': 'Disconnect...'
+hostButtonLabel = {'connect': 'Connect to Pool...',
+                    'disconnect': 'Disconnect from Pool...'
                     }                    
                 
+"""
+IpAddrCtrl's name and id
+"""                
+ipAddrCtrl = {'name': 'ipAddrCtrl',
+                'id': -1
+            }
 
 class xrcmainFrameSub(XenBackupGui_xrc.xrcmainFrame):
     """ 
@@ -79,7 +86,10 @@ This class represents the main GUI frame
     1) create parent frame
     2) create XenServer object
     3) setup event handler for EVT_RESULT event and initialize members
-    4) show up
+    4) set IpAddrCtrl instead of simple TextCtrl
+    5) set default status bar appereance
+    6) set backup button mouse events
+    7) show up
         """
         # 1)
         XenBackupGui_xrc.xrcmainFrame.__init__(self, parent = None)
@@ -98,12 +108,18 @@ This class represents the main GUI frame
         self.vmLeft = 0
         self.exportTaskVM = ''
         self.statusBeforeBackup = ''
+        # 4)        
+        self.ipAddrCtrl = masked.IpAddrCtrl(self, id = ipAddrCtrl['id'], name = ipAddrCtrl['name'])
+        XenBackupGui_xrc.get_resources().AttachUnknownControl('hostTextCtrl', self.ipAddrCtrl, self)
+        self.Bind(wx.EVT_TEXT, self.OnText_hostTextCtrl, id = ipAddrCtrl['id'])
+        # 5)
         xrc.XRCCTRL(self, 'mainStatus').SetStatusText(statusRightText['notConnected'], 1)
         xrc.XRCCTRL(self, 'mainStatus').SetStatusText(self.vmId + \
             statusLeftText['taggedVM'], 0)
+        # 6)
         xrc.XRCCTRL(self, 'backupButton').Bind(wx.EVT_ENTER_WINDOW, self.OnBackupButtonMouseOver)
         xrc.XRCCTRL(self, 'backupButton').Bind(wx.EVT_LEAVE_WINDOW, self.OnBackupButtonMouseLeave)
-        # 4)
+        # 7)
         self.Show()
         
     def OnTaskEvent(self, evt):
@@ -191,7 +207,7 @@ This class represents the main GUI frame
             wx.BeginBusyCursor()                        
             # 1.1)
             try:
-                self.isLogged = self.xen.login(xrc.XRCCTRL(self, 'hostTextCtrl').GetValue())
+                self.isLogged = self.xen.login(self.ipAddrCtrl.GetAddress())
                 xrc.XRCCTRL(self, 'srCombo').AppendItems(self.xen.get_sr_list())
             except Exception, e:
                 wx.MessageBox('Error retreiving SR list:\n %s ' % str(e))
@@ -210,6 +226,7 @@ This class represents the main GUI frame
                     xrc.XRCCTRL(self, 'vmEnableText').Enable(self.isLogged)
                     xrc.XRCCTRL(self, 'vmEnableCheck').Enable(self.isLogged)
                     xrc.XRCCTRL(self, 'hostButton').SetLabel(hostButtonLabel['disconnect'])
+                    xrc.XRCCTRL(self, 'hostTextCtrl').Enable(not self.isLogged)
         # 2)
         else:            
             # 2.1)
@@ -228,6 +245,7 @@ This class represents the main GUI frame
                 xrc.XRCCTRL(self, 'vmEnableCheck').Enable(self.isLogged)
                 self.OnCheckbox_vmEnableCheck(wx.EVT_CHECKBOX)
                 xrc.XRCCTRL(self, 'hostButton').SetLabel(hostButtonLabel['connect'])
+                xrc.XRCCTRL(self, 'hostTextCtrl').Enable(not self.isLogged)
                 xrc.XRCCTRL(self, 'hostTextCtrl').Clear()
                 xrc.XRCCTRL(self, 'backupButton').Enable(self.isLogged)
         
@@ -235,7 +253,11 @@ This class represents the main GUI frame
         """ 
     hostTextCtrl event handler:
         """
-        isEmpty = (len(xrc.XRCCTRL(self, 'hostTextCtrl').GetValue()) == 0)
+        parts = self.ipAddrCtrl.GetAddress().split('.')
+        for i in range(len(parts)): 
+            isEmpty = len(parts[i]) == 0
+            if isEmpty: 
+                break
         xrc.XRCCTRL(self, 'hostButton').Enable(not isEmpty)
         
     def OnCombobox_srCombo(self, evt):

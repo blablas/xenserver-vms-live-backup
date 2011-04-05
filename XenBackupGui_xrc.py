@@ -37,7 +37,6 @@ class xrcmainFrame(wx.Frame):
 
         # Define variables for the controls, bind event handlers
 
-        self.Bind(wx.EVT_TEXT, self.OnText_hostTextCtrl, id=xrc.XRCID('hostTextCtrl'))
         self.Bind(wx.EVT_BUTTON, self.OnButton_hostButton, id=xrc.XRCID('hostButton'))
         self.Bind(wx.EVT_COMBOBOX, self.OnCombobox_srCombo, id=xrc.XRCID('srCombo'))
         self.Bind(wx.EVT_CHECKBOX, self.OnCheckbox_vmEnableCheck, id=xrc.XRCID('vmEnableCheck'))
@@ -45,12 +44,6 @@ class xrcmainFrame(wx.Frame):
         self.Bind(wx.EVT_BUTTON, self.OnButton_vmButton, id=xrc.XRCID('vmButton'))
         self.Bind(wx.EVT_BUTTON, self.OnButton_backupButton, id=xrc.XRCID('backupButton'))
         self.Bind(wx.EVT_BUTTON, self.OnButton_quitButton, id=xrc.XRCID('quitButton'))
-
-#!XRCED:begin-block:xrcmainFrame.OnText_hostTextCtrl
-    def OnText_hostTextCtrl(self, evt):
-        # Replace with event handler code
-        print "OnText_hostTextCtrl()"
-#!XRCED:end-block:xrcmainFrame.OnText_hostTextCtrl        
 
 #!XRCED:begin-block:xrcmainFrame.OnButton_hostButton
     def OnButton_hostButton(self, evt):
@@ -148,36 +141,3 @@ def __init_resources():
     __res = xrc.EmptyXmlResource()
 
     __res.Load('XenBackupGui.xrc')
-
-# ----------------------- Gettext strings ---------------------
-
-def __gettext_strings():
-    # This is a dummy function that lists all the strings that are used in
-    # the XRC file in the _("a string") format to be recognized by GNU
-    # gettext utilities (specificaly the xgettext utility) and the
-    # mki18n.py script.  For more information see:
-    # http://wiki.wxpython.org/index.cgi/Internationalization 
-    
-    def _(str): pass
-    
-    _("Host:")
-    _("IP address or FQDN of XeServer host")
-    _("Connect...")
-    _("Storage Repository:")
-    _("NFS Storage Repositories associated to the Pool")
-    _("Specify a virtual machine:")
-    _("Specify a single Virtual Machine to be backed up")
-    _("Specify a single Virtual Machine to be backed up")
-    _("Virtual Machine:")
-    _("Virtual Machine to be backed up")
-    _("Browse...")
-    _("Options:")
-    _("Backup!")
-    _("Start backup process")
-    _("Quit")
-    _("Quit XenBackup")
-    _("XenBackup 1.0")
-    _("OK")
-    _("Cancel")
-    _("Select Virtual Machine")
-
