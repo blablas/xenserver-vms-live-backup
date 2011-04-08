@@ -63,8 +63,8 @@ backupButtonTooltip = {'backup': 'Start backup process',
 """
 Possible host button labels 
 """                    
-hostButtonLabel = {'connect': 'Connect to Pool...',
-                    'disconnect': 'Disconnect from Pool...'
+hostButtonLabel = {'connect': 'Connect...',
+                    'disconnect': 'Disconnect...'
                     }                    
                 
 """
@@ -73,6 +73,11 @@ IpAddrCtrl's name and id
 ipAddrCtrl = {'name': 'ipAddrCtrl',
                 'id': -1
             }
+
+"""
+Pool's credentials list
+"""
+poolCredentials = {}
 
 class xrcmainFrameSub(XenBackupGui_xrc.xrcmainFrame):
     """ 
@@ -195,44 +200,69 @@ This class represents the main GUI frame
     hostButton event handler:
     
     1) If not already logged:
-        1.1) login to specified host and retreive SR list
-        1.2) set controls appereance
+        1.1) get password for root user
+        1.2) login to specified host and retreive SR list
+        1.3) set controls appereance
     2) if already logged:
         2.1) logout
-        2.2) set controls appereance
+        2.2) set default values for members
+        2.3) set controls appereance
         """  
         # 1)
         if not self.isLogged:  
-            wx.SafeYield()
-            wx.BeginBusyCursor()                        
-            # 1.1)
-            try:
-                self.isLogged = self.xen.login(self.ipAddrCtrl.GetAddress())
-                xrc.XRCCTRL(self, 'srCombo').AppendItems(self.xen.get_sr_list())
-            except Exception, e:
-                wx.MessageBox('Error retreiving SR list:\n %s ' % str(e))
-            finally:   
+            # 1.1)                        
+            result = wx.ID_OK
+            host = self.ipAddrCtrl.GetAddress()
+            if host in poolCredentials:
+                password = poolCredentials[host]
+            else:
+                passDialog = xrcpassDialogSub(self)
+                result = passDialog.ShowModal()                                    
+                password = xrc.XRCCTRL(passDialog, 'passTextCtrl').GetValue()
+                passDialog.Destroy()
+            if result != wx.ID_ABORT:
                 wx.SafeYield()
-                wx.EndBusyCursor()
+                wx.BeginBusyCursor()               
                 # 1.2)
-                if self.isLogged:
-                    try:
-                        xrc.XRCCTRL(self, 'mainStatus').SetStatusText(statusRightText['connected'] \
-                            + self.xen.get_pool_name(), 1)
-                    except Exception, e:
-                        wx.MessageBox('Error retreiving Pool name:\n %s ' % str(e))
-                    xrc.XRCCTRL(self, 'srText').Enable(self.isLogged)
-                    xrc.XRCCTRL(self, 'srCombo').Enable(self.isLogged)
-                    xrc.XRCCTRL(self, 'vmEnableText').Enable(self.isLogged)
-                    xrc.XRCCTRL(self, 'vmEnableCheck').Enable(self.isLogged)
-                    xrc.XRCCTRL(self, 'hostButton').SetLabel(hostButtonLabel['disconnect'])
-                    xrc.XRCCTRL(self, 'hostTextCtrl').Enable(not self.isLogged)
+                try:
+                    self.isLogged = self.xen.login(self.ipAddrCtrl.GetAddress(), password)
+                finally:   
+                    wx.SafeYield()
+                    wx.EndBusyCursor()
+                    # 1.3)
+                    if self.isLogged:
+                        if result == wx.ID_SAVE:
+                            poolCredentials[host] = password
+                        try:
+                            xrc.XRCCTRL(self, 'srCombo').AppendItems(self.xen.get_sr_list())
+                        except Exception, e:
+                            wx.MessageBox('Error retreiving SR list:\n %s ' % str(e))                        
+                        try:
+                            xrc.XRCCTRL(self, 'mainStatus').SetStatusText(statusRightText['connected'] \
+                                + self.xen.get_pool_name(), 1)
+                        except Exception, e:
+                            wx.MessageBox('Error retreiving Pool name:\n %s ' % str(e))
+                        xrc.XRCCTRL(self, 'srText').Enable(self.isLogged)
+                        xrc.XRCCTRL(self, 'srCombo').Enable(self.isLogged)
+                        xrc.XRCCTRL(self, 'vmEnableText').Enable(self.isLogged)
+                        xrc.XRCCTRL(self, 'vmEnableCheck').Enable(self.isLogged)
+                        xrc.XRCCTRL(self, 'hostButton').SetLabel(hostButtonLabel['disconnect'])
+                        xrc.XRCCTRL(self, 'hostTextCtrl').Enable(not self.isLogged)
+                    else:
+                        wx.MessageBox('Error logging on host:\n %s ' % self.ipAddrCtrl.GetAddress())
         # 2)
         else:            
             # 2.1)
-            self.isLogged = not self.xen.logout()
-            # 2.3)
+            self.isLogged = not self.xen.logout()            
             if not self.isLogged:
+                # 2.2)
+                self.vmId = datetime.datetime.today().strftime("%a")
+                self.vmList = None
+                self.vmCount = 0
+                self.vmLeft = 0
+                self.exportTaskVM = ''
+                self.statusBeforeBackup = ''
+                # 2.3)
                 xrc.XRCCTRL(self, 'mainStatus').SetStatusText(statusRightText['notConnected'], 1)
                 xrc.XRCCTRL(self, 'srText').Enable(self.isLogged)
                 xrc.XRCCTRL(self, 'srCombo').Clear()
@@ -273,11 +303,12 @@ This class represents the main GUI frame
         try:
             isChecked = xrc.XRCCTRL(self, 'vmEnableCheck').GetValue()
             if not isChecked:
-                xrc.XRCCTRL(self, 'vmTextCtrl').Clear()            
+                xrc.XRCCTRL(self, 'vmTextCtrl').Clear()     
+                self.vmId = datetime.datetime.today().strftime("%a")       
                 xrc.XRCCTRL(self, 'mainStatus').SetStatusText(self.vmId + \
                     statusLeftText['taggedVM'], 0)
             else:
-                xrc.XRCCTRL(self, 'mainStatus').SetStatusText(statusLeftText['noVM'], 0)                                    
+                xrc.XRCCTRL(self, 'mainStatus').SetStatusText(statusLeftText['noVM'], 0)  
             xrc.XRCCTRL(self, 'vmEnableText').Enable(isChecked)
             xrc.XRCCTRL(self, 'vmTextCtrl').Enable(isChecked)
             xrc.XRCCTRL(self, 'vmText').Enable(isChecked)
@@ -310,7 +341,8 @@ This class represents the main GUI frame
     1) get Pool's virtual machine list
     2) create virtual machines dialog
     3) add virtual machine list to the tree list control grouped by hostname
-    4) enable backup button
+    4) show selected virtual machine
+    5) enable backup button
         """         
         wx.SafeYield()
         wx.BeginBusyCursor()
@@ -333,9 +365,13 @@ This class represents the main GUI frame
                 h = vmTree.AppendItem(vmTree.GetRootItem(), host)
                 for vm in vms:
                     vmTree.AppendItem(h, vm)
-            vmDialog.ShowModal()          
-        finally:
+            result = vmDialog.ShowModal()
             # 4)
+            if result == wx.ID_OK:
+                xrc.XRCCTRL(self, 'vmTextCtrl').SetValue(vmDialog.selection)
+                self.OnText_vmTextCtrl(wx.EVT_TEXT)
+        finally:
+            # 5)
             xrc.XRCCTRL(self, 'backupButton').Enable(self.enableBackupButton())
             vmDialog.Destroy()        
         
@@ -428,8 +464,8 @@ This class represents the virtual machines selection's dialog
         """ 
     xrcvmDialogSub Constructor
         """        
-        self.myParent = parent
-        self.selection = None
+##        self.myParent = parent
+        self.selection = ''
         XenBackupGui_xrc.xrcvmDialog.__init__(self, parent)
         
     def OnTree_sel_changed_vmTreeList(self, evt):
@@ -440,9 +476,9 @@ This class represents the virtual machines selection's dialog
         isLeaf = not xrc.XRCCTRL(self, 'vmTreeList').ItemHasChildren(selection)
         xrc.XRCCTRL(self, 'OkButton').Enable(isLeaf)
         if isLeaf:
-            self.selection = selection
+            self.selection = xrc.XRCCTRL(self, 'vmTreeList').GetItemText(selection)
         else:
-            self.selection = None
+            self.selection = ''
             
     def OnButton_CancelButton(self, evt):
         """ 
@@ -454,12 +490,32 @@ This class represents the virtual machines selection's dialog
         """ 
     okButton event handler:
         """         
-        if self.selection is not None:
-            selectionText = xrc.XRCCTRL(self, 'vmTreeList').GetItemText(self.selection)
-            xrc.XRCCTRL(self.myParent, 'vmTextCtrl').SetValue(selectionText)
+##        if self.selection is not None:
+##            selectionText = xrc.XRCCTRL(self, 'vmTreeList').GetItemText(self.selection)
+##            xrc.XRCCTRL(self.myParent, 'vmTextCtrl').SetValue(selectionText)        
+        if len(self.selection) != 0:
             self.EndModal(wx.ID_OK)
         else:
             self.EndModal(wx.ID_ABORT)
+    
+class xrcpassDialogSub(XenBackupGui_xrc.xrcpassDialog):
+    
+    def __init__(self, parent):
+        XenBackupGui_xrc.xrcpassDialog.__init__(self, parent)
+
+    def OnText_passTextCtrl(self, evt):
+        isEmpty = len(xrc.XRCCTRL(self, 'passTextCtrl').GetValue()) == 0
+        xrc.XRCCTRL(self, 'OkButton').Enable(not isEmpty)
+
+    def OnButton_OkButton(self, evt):
+        isChecked = xrc.XRCCTRL(self, 'passRemCheck').GetValue()
+        if isChecked:
+            self.EndModal(wx.ID_SAVE)
+        else:
+            self.EndModal(wx.ID_OK)
+
+    def OnButton_CancelButton(self, evt):
+        self.EndModal(wx.ID_ABORT)
     
 if __name__ == "__main__":
     app = wx.App(False)

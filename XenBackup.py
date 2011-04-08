@@ -334,8 +334,8 @@ This class represents the XemServer backup library
         self.nfs_sr = None
         self.session = None
         self.user_session = None
-        self.username = 'user'
-        self.password = 'password'        
+        self.username = 'root'
+        self.password = ''        
         self.host = ''
         self.load_config(conf_file)
         self.log_config(self.config['log_file'])
@@ -555,23 +555,25 @@ This class represents the XemServer backup library
             VM2Export.export_tasks[task_vm] = None
         VM2Export.lock.release()
         
-    def login(self, host): 
+    def login(self, host, password): 
         """
     Login to XenServer host
         """
         self.host = host
         try:
             self.session = XenAPI.Session('https://' + self.host)
-            self.user_session = self.session.xenapi.login_with_password(self.username, self.password)
+            self.user_session = self.session.xenapi.login_with_password(self.username, password)
         # if 'host' is not the Pool's master, retreive the master from exception details 
         # and try to reconnect (adjust 'self.host' to point to the Pool's master)
         except XenAPI.Failure, e:
             if e.details[0] == 'HOST_IS_SLAVE':
                 self.session = XenAPI.Session('https://' + e.details[1])
-                self.user_session = self.session.xenapi.login_with_password(self.username, self.password)
+                self.user_session = self.session.xenapi.login_with_password(self.username, password)
                 self.host = e.details[1]
             else:
+                self.log('Failed to login to %s: %s' % (self.host, str(e)))
                 return False 
+        self.password = password
         self.log('Successfully login to %s' % self.host)                 
         return True
 

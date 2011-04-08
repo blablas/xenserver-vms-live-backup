@@ -132,6 +132,50 @@ class xrcvmDialog(wx.Dialog):
 #!XRCED:end-block:xrcvmDialog.OnButton_CancelButton        
 
 
+class xrcpassDialog(wx.Dialog):
+#!XRCED:begin-block:xrcpassDialog.PreCreate
+    def PreCreate(self, pre):
+        """ This function is called during the class's initialization.
+        
+        Override it for custom setup before the window is created usually to
+        set additional window styles using SetWindowStyle() and SetExtraStyle().
+        """
+        pass
+        
+#!XRCED:end-block:xrcpassDialog.PreCreate
+
+    def __init__(self, parent):
+        # Two stage creation (see http://wiki.wxpython.org/index.cgi/TwoStageCreation)
+        pre = wx.PreDialog()
+        self.PreCreate(pre)
+        get_resources().LoadOnDialog(pre, parent, "passDialog")
+        self.PostCreate(pre)
+
+        # Define variables for the controls, bind event handlers
+
+        self.Bind(wx.EVT_TEXT, self.OnText_passTextCtrl, id=xrc.XRCID('passTextCtrl'))
+        self.Bind(wx.EVT_BUTTON, self.OnButton_OkButton, id=xrc.XRCID('OkButton'))
+        self.Bind(wx.EVT_BUTTON, self.OnButton_CancelButton, id=xrc.XRCID('CancelButton'))
+
+#!XRCED:begin-block:xrcpassDialog.OnText_passTextCtrl
+    def OnText_passTextCtrl(self, evt):
+        # Replace with event handler code
+        print "OnText_passTextCtrl()"
+#!XRCED:end-block:xrcpassDialog.OnText_passTextCtrl        
+
+#!XRCED:begin-block:xrcpassDialog.OnButton_OkButton
+    def OnButton_OkButton(self, evt):
+        # Replace with event handler code
+        print "OnButton_OkButton()"
+#!XRCED:end-block:xrcpassDialog.OnButton_OkButton        
+
+#!XRCED:begin-block:xrcpassDialog.OnButton_CancelButton
+    def OnButton_CancelButton(self, evt):
+        # Replace with event handler code
+        print "OnButton_CancelButton()"
+#!XRCED:end-block:xrcpassDialog.OnButton_CancelButton        
+
+
 
 
 # ------------------------ Resource data ----------------------
@@ -141,3 +185,41 @@ def __init_resources():
     __res = xrc.EmptyXmlResource()
 
     __res.Load('XenBackupGui.xrc')
+
+# ----------------------- Gettext strings ---------------------
+
+def __gettext_strings():
+    # This is a dummy function that lists all the strings that are used in
+    # the XRC file in the _("a string") format to be recognized by GNU
+    # gettext utilities (specificaly the xgettext utility) and the
+    # mki18n.py script.  For more information see:
+    # http://wiki.wxpython.org/index.cgi/Internationalization 
+    
+    def _(str): pass
+    
+    _("Host:")
+    _("IP address of a XenServer host")
+    _("Connect...")
+    _("Storage Repository:")
+    _("NFS Storage Repositories associated to the Pool")
+    _("Specify a virtual machine:")
+    _("Specify a single Virtual Machine to be backed up")
+    _("Specify a single Virtual Machine to be backed up")
+    _("Virtual Machine:")
+    _("Virtual Machine to be backed up")
+    _("Browse...")
+    _("Options:")
+    _("Backup!")
+    _("Start backup process")
+    _("Quit")
+    _("Quit XenBackup")
+    _("XenBackup 1.0")
+    _("OK")
+    _("Cancel")
+    _("Select Virtual Machine")
+    _("Remember password")
+    _("Remember")
+    _("OK")
+    _("Cancel")
+    _("Root password")
+
