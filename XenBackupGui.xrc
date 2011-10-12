@@ -18,13 +18,17 @@
                       <flag>wxALL|wxALIGN_CENTRE_VERTICAL</flag>
                     </object>
                     <object class="sizeritem">
-                      <object class="wxFlexGridSizer">
+                      <object class="wxBoxSizer">
                         <object class="sizeritem">
                           <object class="unknown" name="hostTextCtrl">
                             <tooltip>IP address of a XenServer host</tooltip>
                           </object>
-                          <option>1</option>
-                          <flag>wxALL|wxEXPAND</flag>
+                          <option>0</option>
+                          <flag>wxALL|wxEXPAND|wxALIGN_CENTRE_VERTICAL</flag>
+                          <minsize>200, -1</minsize>
+                        </object>
+                        <object class="spacer">
+                          <size>20,0</size>
                         </object>
                         <object class="sizeritem">
                           <object class="wxButton" name="hostButton">
@@ -35,12 +39,9 @@
                             </XRCED>
                           </object>
                           <option>1</option>
-                          <flag>wxALL|wxEXPAND</flag>
+                          <flag>wxALL|wxEXPAND|wxALIGN_CENTRE_VERTICAL</flag>
                         </object>
-                        <cols>2</cols>
-                        <rows>1</rows>
-                        <hgap>10</hgap>
-                        <growablecols>0</growablecols>
+                        <orient>wxHORIZONTAL</orient>
                       </object>
                       <option>1</option>
                       <flag>wxALL|wxEXPAND</flag>
@@ -74,39 +75,38 @@
                       <flag>wxEXPAND</flag>
                     </object>
                     <object class="sizeritem">
-                      <object class="wxFlexGridSizer">
+                      <object class="wxStaticText" name="vmEnableText">
+                        <label>Specify a virtual machine:</label>
+                        <tooltip>Specify a single Virtual Machine to be backed up</tooltip>
+                        <enabled>0</enabled>
+                      </object>
+                      <flag>wxALL|wxALIGN_CENTRE_VERTICAL</flag>
+                    </object>
+                    <object class="sizeritem">
+                      <object class="wxBoxSizer">
+                        <orient>wxHORIZONTAL</orient>
                         <object class="sizeritem">
-                          <object class="wxRadioBox" name="vmRadioBox">
-                            <label>Select by</label>
-                            <content>
-                              <item>Host</item>
-                              <item>TAG</item>
-                            </content>
-                            <tooltip>Choose single VM or a TAG grouped list</tooltip>
+                          <object class="wxCheckBox" name="vmEnableCheck">
+                            <tooltip>Specify a single Virtual Machine to be backed up</tooltip>
                             <enabled>0</enabled>
                             <XRCED>
-                              <events>EVT_RADIOBOX</events>
+                              <events>EVT_CHECKBOX</events>
                             </XRCED>
                           </object>
-                          <option>1</option>
-                          <flag>wxALL|wxEXPAND</flag>
                         </object>
-                        <cols>2</cols>
-                        <rows>0</rows>
-                        <hgap>10</hgap>
-                        <growablecols>0</growablecols>
                       </object>
                       <option>1</option>
-                      <flag>wxALL|wxEXPAND</flag>
+                      <flag>wxEXPAND</flag>
                     </object>
-                    <cols>2</cols>
-                    <vgap>10</vgap>
-                    <hgap>5</hgap>
-                    <growablecols>1</growablecols>
-                    <object class="spacer"/>
-                    <object class="spacer"/>
                     <object class="sizeritem">
-                      <object class="wxFlexGridSizer">
+                      <object class="wxStaticText" name="vmText">
+                        <label>Virtual Machine:</label>
+                        <enabled>0</enabled>
+                      </object>
+                      <flag>wxALL|wxALIGN_CENTRE_VERTICAL</flag>
+                    </object>
+                    <object class="sizeritem">
+                      <object class="wxBoxSizer">
                         <object class="sizeritem">
                           <object class="wxTextCtrl" name="vmTextCtrl">
                             <tooltip>Virtual Machine to be backed up</tooltip>
@@ -117,7 +117,10 @@
                             </XRCED>
                           </object>
                           <option>1</option>
-                          <flag>wxALL|wxEXPAND</flag>
+                          <flag>wxALL|wxEXPAND|wxALIGN_CENTRE_VERTICAL</flag>
+                        </object>
+                        <object class="spacer">
+                          <size>10,0</size>
                         </object>
                         <object class="sizeritem">
                           <object class="wxButton" name="vmButton">
@@ -127,16 +130,16 @@
                               <events>EVT_BUTTON</events>
                             </XRCED>
                           </object>
-                          <option>1</option>
-                          <flag>wxALL|wxEXPAND</flag>
                         </object>
-                        <cols>2</cols>
-                        <rows>1</rows>
-                        <hgap>10</hgap>
-                        <growablecols>0</growablecols>
+                        <orient>wxHORIZONTAL</orient>
                       </object>
-                      <flag>wxALL|wxEXPAND</flag>
+                      <option>1</option>
+                      <flag>wxALL|wxEXPAND|wxALIGN_CENTRE_VERTICAL</flag>
                     </object>
+                    <cols>2</cols>
+                    <vgap>11</vgap>
+                    <hgap>5</hgap>
+                    <growablecols>1</growablecols>
                   </object>
                   <option>1</option>
                   <flag>wxALL|wxEXPAND</flag>
@@ -195,13 +198,13 @@
     </object>
     <object class="wxStatusBar" name="mainStatus">
       <fields>2</fields>
-      <widths>-2,-1</widths>
+      <widths>370,130</widths>
       <style>wxST_SIZEGRIP</style>
     </object>
-    <size>500,300</size>
+    <size>500,250</size>
     <title>XenBackup 1.0</title>
     <centered>1</centered>
-    <style>wxDEFAULT_FRAME_STYLE|wxTAB_TRAVERSAL</style>
+    <style>wxCAPTION|wxSYSTEM_MENU|wxTAB_TRAVERSAL</style>
   </object>
   <object class="wxDialog" name="vmDialog">
     <object class="wxBoxSizer">
@@ -301,8 +304,9 @@
                     <style>normal</style>
                     <weight>normal</weight>
                     <underlined>0</underlined>
-                    <family>default</family>
-                    <face>Cantarell</face>
+                    <family>swiss</family>
+                    <face>Droid Sans</face>
+                    <encoding>UTF-8</encoding>
                   </font>
                 </object>
                 <flag>wxALIGN_CENTRE</flag>

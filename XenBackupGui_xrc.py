@@ -39,7 +39,7 @@ class xrcmainFrame(wx.Frame):
 
         self.Bind(wx.EVT_BUTTON, self.OnButton_hostButton, id=xrc.XRCID('hostButton'))
         self.Bind(wx.EVT_COMBOBOX, self.OnCombobox_srCombo, id=xrc.XRCID('srCombo'))
-        self.Bind(wx.EVT_RADIOBOX, self.OnRadiobox_vmRadioBox, id=xrc.XRCID('vmRadioBox'))
+        self.Bind(wx.EVT_CHECKBOX, self.OnCheckbox_vmEnableCheck, id=xrc.XRCID('vmEnableCheck'))
         self.Bind(wx.EVT_TEXT, self.OnText_vmTextCtrl, id=xrc.XRCID('vmTextCtrl'))
         self.Bind(wx.EVT_BUTTON, self.OnButton_vmButton, id=xrc.XRCID('vmButton'))
         self.Bind(wx.EVT_BUTTON, self.OnButton_backupButton, id=xrc.XRCID('backupButton'))
@@ -57,11 +57,11 @@ class xrcmainFrame(wx.Frame):
         print "OnCombobox_srCombo()"
 #!XRCED:end-block:xrcmainFrame.OnCombobox_srCombo        
 
-#!XRCED:begin-block:xrcmainFrame.OnRadiobox_vmRadioBox
-    def OnRadiobox_vmRadioBox(self, evt):
+#!XRCED:begin-block:xrcmainFrame.OnCheckbox_vmEnableCheck
+    def OnCheckbox_vmEnableCheck(self, evt):
         # Replace with event handler code
-        print "OnRadiobox_vmRadioBox()"
-#!XRCED:end-block:xrcmainFrame.OnRadiobox_vmRadioBox        
+        print "OnCheckbox_vmEnableCheck()"
+#!XRCED:end-block:xrcmainFrame.OnCheckbox_vmEnableCheck        
 
 #!XRCED:begin-block:xrcmainFrame.OnText_vmTextCtrl
     def OnText_vmTextCtrl(self, evt):
@@ -185,3 +185,41 @@ def __init_resources():
     __res = xrc.EmptyXmlResource()
 
     __res.Load('XenBackupGui.xrc')
+
+# ----------------------- Gettext strings ---------------------
+
+def __gettext_strings():
+    # This is a dummy function that lists all the strings that are used in
+    # the XRC file in the _("a string") format to be recognized by GNU
+    # gettext utilities (specificaly the xgettext utility) and the
+    # mki18n.py script.  For more information see:
+    # http://wiki.wxpython.org/index.cgi/Internationalization 
+    
+    def _(str): pass
+    
+    _("Host:")
+    _("IP address of a XenServer host")
+    _("Connect...")
+    _("Storage Repository:")
+    _("NFS Storage Repositories associated to the Pool")
+    _("Specify a virtual machine:")
+    _("Specify a single Virtual Machine to be backed up")
+    _("Specify a single Virtual Machine to be backed up")
+    _("Virtual Machine:")
+    _("Virtual Machine to be backed up")
+    _("Browse...")
+    _("Options:")
+    _("Backup!")
+    _("Start backup process")
+    _("Quit")
+    _("Quit XenBackup")
+    _("XenBackup 1.0")
+    _("OK")
+    _("Cancel")
+    _("Select Virtual Machine")
+    _("Remember password")
+    _("Remember")
+    _("OK")
+    _("Cancel")
+    _("Root password")
+
